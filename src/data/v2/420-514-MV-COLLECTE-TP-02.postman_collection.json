@@ -6,6 +6,39 @@
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "46939953"
 	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Collection-level pre-request script",
+					"// Log token status for debugging",
+					"const token = pm.collectionVariables.get('token');",
+					"const adminToken = pm.collectionVariables.get('adminToken');",
+					"",
+					"// Check if we're in a request that needs auth",
+					"const authHeader = pm.request.headers.get('Authorization');",
+					"if (authHeader && authHeader.includes('{{token}}') && !token) {",
+					"    console.warn('⚠️ User token is missing! Make sure to run \"Login User (Get Token)\" first.');",
+					"}",
+					"if (authHeader && authHeader.includes('{{adminToken}}') && !adminToken) {",
+					"    console.warn('⚠️ Admin token is missing! Make sure to run \"Login Admin (Get Token)\" first.');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Collection-level test script",
+					"// This runs after each request"
+				]
+			}
+		}
+	],
 	"variable": [
 		{
 			"key": "baseUrl",
@@ -26,6 +59,69 @@
 	"item": [
 		{
 			"name": "1. Authentication Setup",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// Auto-authenticate if tokens are missing",
+							"const baseUrl = pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+							"",
+							"// Check if admin token is needed and missing",
+							"const authHeader = pm.request.headers.get('Authorization');",
+							"const needsAdminToken = authHeader && authHeader.includes('{{adminToken}}');",
+							"const adminToken = pm.collectionVariables.get('adminToken');",
+							"",
+							"if (needsAdminToken && !adminToken) {",
+							"    console.log('🔐 Auto-authenticating as admin...');",
+							"    pm.sendRequest({",
+							"        url: baseUrl + '/api/v2/auth/login',",
+							"        method: 'POST',",
+							"        header: { 'Content-Type': 'application/json' },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify({ email: 'admin@example.com', password: 'password' })",
+							"        }",
+							"    }, function (err, res) {",
+							"        if (!err && res.code === 200) {",
+							"            const jsonData = res.json();",
+							"            if (jsonData && jsonData.token) {",
+							"                pm.collectionVariables.set('adminToken', jsonData.token);",
+							"                console.log('✅ Admin token auto-set');",
+							"            }",
+							"        }",
+							"    });",
+							"}",
+							"",
+							"// Check if user token is needed and missing",
+							"const needsUserToken = authHeader && authHeader.includes('{{token}}');",
+							"const userToken = pm.collectionVariables.get('token');",
+							"",
+							"if (needsUserToken && !userToken) {",
+							"    console.log('🔐 Auto-authenticating as user...');",
+							"    pm.sendRequest({",
+							"        url: baseUrl + '/api/v2/auth/login',",
+							"        method: 'POST',",
+							"        header: { 'Content-Type': 'application/json' },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify({ email: 'user@example.com', password: 'password' })",
+							"        }",
+							"    }, function (err, res) {",
+							"        if (!err && res.code === 200) {",
+							"            const jsonData = res.json();",
+							"            if (jsonData && jsonData.token) {",
+							"                pm.collectionVariables.set('token', jsonData.token);",
+							"                console.log('✅ User token auto-set');",
+							"            }",
+							"        }",
+							"    });",
+							"}"
+						]
+					}
+				}
+			],
 			"item": [
 				{
 					"name": "Login Admin (Get Token)",
@@ -39,9 +135,43 @@
 									"});",
 									"",
 									"if (pm.response.code === 200) {",
-									"    const jsonData = pm.response.json();",
-									"    pm.collectionVariables.set('adminToken', jsonData.token);",
-									"    console.log('Admin token set:', jsonData.token);",
+									"    try {",
+									"        const jsonData = pm.response.json();",
+									"        console.log('Login response:', JSON.stringify(jsonData, null, 2));",
+									"        ",
+									"        if (jsonData && jsonData.token) {",
+									"            const tokenValue = jsonData.token;",
+									"            pm.collectionVariables.set('adminToken', tokenValue);",
+									"            console.log('✅ Admin token successfully set:', tokenValue.substring(0, 30) + '...');",
+									"            ",
+									"            pm.test('Admin token extracted and saved', function () {",
+									"                pm.expect(tokenValue).to.be.a('string');",
+									"                pm.expect(tokenValue.length).to.be.above(0);",
+									"            });",
+									"            ",
+									"            // Verify token was actually saved",
+									"            const savedToken = pm.collectionVariables.get('adminToken');",
+									"            if (savedToken === tokenValue) {",
+									"                console.log('✅ Token verified in collection variables');",
+									"            } else {",
+									"                console.error('❌ Token not saved correctly!');",
+									"            }",
+									"        } else {",
+									"            console.error('❌ No token found in response. Response keys:', Object.keys(jsonData || {}));",
+									"            pm.test('Token should exist in response', function () {",
+									"                pm.expect(jsonData.token).to.exist;",
+									"            });",
+									"        }",
+									"    } catch (error) {",
+									"        console.error('❌ Error parsing response or setting token:', error.message);",
+									"        console.error('Response body:', pm.response.text());",
+									"        pm.test('Response should be valid JSON with token', function () {",
+									"            pm.expect(error).to.not.exist;",
+									"        });",
+									"    }",
+									"} else {",
+									"    console.error('❌ Login failed with status:', pm.response.code);",
+									"    console.error('Response:', pm.response.text());",
 									"}"
 								],
 								"type": "text/javascript"
@@ -85,9 +215,43 @@
 									"});",
 									"",
 									"if (pm.response.code === 200) {",
-									"    const jsonData = pm.response.json();",
-									"    pm.collectionVariables.set('token', jsonData.token);",
-									"    console.log('User token set:', jsonData.token);",
+									"    try {",
+									"        const jsonData = pm.response.json();",
+									"        console.log('Login response:', JSON.stringify(jsonData, null, 2));",
+									"        ",
+									"        if (jsonData && jsonData.token) {",
+									"            const tokenValue = jsonData.token;",
+									"            pm.collectionVariables.set('token', tokenValue);",
+									"            console.log('✅ User token successfully set:', tokenValue.substring(0, 30) + '...');",
+									"            ",
+									"            pm.test('User token extracted and saved', function () {",
+									"                pm.expect(tokenValue).to.be.a('string');",
+									"                pm.expect(tokenValue.length).to.be.above(0);",
+									"            });",
+									"            ",
+									"            // Verify token was actually saved",
+									"            const savedToken = pm.collectionVariables.get('token');",
+									"            if (savedToken === tokenValue) {",
+									"                console.log('✅ Token verified in collection variables');",
+									"            } else {",
+									"                console.error('❌ Token not saved correctly!');",
+									"            }",
+									"        } else {",
+									"            console.error('❌ No token found in response. Response keys:', Object.keys(jsonData || {}));",
+									"            pm.test('Token should exist in response', function () {",
+									"                pm.expect(jsonData.token).to.exist;",
+									"            });",
+									"        }",
+									"    } catch (error) {",
+									"        console.error('❌ Error parsing response or setting token:', error.message);",
+									"        console.error('Response body:', pm.response.text());",
+									"        pm.test('Response should be valid JSON with token', function () {",
+									"            pm.expect(error).to.not.exist;",
+									"        });",
+									"    }",
+									"} else {",
+									"    console.error('❌ Login failed with status:', pm.response.code);",
+									"    console.error('Response:', pm.response.text());",
 									"}"
 								],
 								"type": "text/javascript"
@@ -343,9 +507,9 @@
 					"request": {
 						"method": "GET",
 						"url": {
-							"raw": "{{baseUrl}}/api/v2/movies/id0164",
+							"raw": "{{baseUrl}}/api/v2/movies/id0166",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "v2", "movies", "id0164"]
+							"path": ["api", "v2", "movies", "id0166"]
 						}
 					},
 					"response": []
@@ -379,6 +543,41 @@
 		},
 		{
 			"name": "3. Movies - Admin Operations",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// Auto-authenticate admin if token is missing",
+							"const adminToken = pm.collectionVariables.get('adminToken');",
+							"if (!adminToken) {",
+							"    console.log('🔐 Auto-authenticating as admin...');",
+							"    const baseUrl = pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+							"    pm.sendRequest({",
+							"        url: baseUrl + '/api/v2/auth/login',",
+							"        method: 'POST',",
+							"        header: { 'Content-Type': 'application/json' },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify({ email: 'admin@example.com', password: 'password' })",
+							"        }",
+							"    }, function (err, res) {",
+							"        if (!err && res.code === 200) {",
+							"            const jsonData = res.json();",
+							"            if (jsonData && jsonData.token) {",
+							"                pm.collectionVariables.set('adminToken', jsonData.token);",
+							"                console.log('✅ Admin token auto-set');",
+							"            }",
+							"        } else {",
+							"            console.error('❌ Auto-authentication failed:', err || res.text());",
+							"        }",
+							"    });",
+							"}"
+						]
+					}
+				}
+			],
 			"item": [
 				{
 					"name": "Create Movie (Admin)",
@@ -703,6 +902,41 @@
 		},
 		{
 			"name": "5. Series - Admin Operations",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// Auto-authenticate admin if token is missing",
+							"const adminToken = pm.collectionVariables.get('adminToken');",
+							"if (!adminToken) {",
+							"    console.log('🔐 Auto-authenticating as admin...');",
+							"    const baseUrl = pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+							"    pm.sendRequest({",
+							"        url: baseUrl + '/api/v2/auth/login',",
+							"        method: 'POST',",
+							"        header: { 'Content-Type': 'application/json' },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify({ email: 'admin@example.com', password: 'password' })",
+							"        }",
+							"    }, function (err, res) {",
+							"        if (!err && res.code === 200) {",
+							"            const jsonData = res.json();",
+							"            if (jsonData && jsonData.token) {",
+							"                pm.collectionVariables.set('adminToken', jsonData.token);",
+							"                console.log('✅ Admin token auto-set');",
+							"            }",
+							"        } else {",
+							"            console.error('❌ Auto-authentication failed:', err || res.text());",
+							"        }",
+							"    });",
+							"}"
+						]
+					}
+				}
+			],
 			"item": [
 				{
 					"name": "Create Series (Admin)",
@@ -840,6 +1074,41 @@
 		},
 		{
 			"name": "6. Ratings - User Operations",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// Auto-authenticate user if token is missing",
+							"const userToken = pm.collectionVariables.get('token');",
+							"if (!userToken) {",
+							"    console.log('🔐 Auto-authenticating as user...');",
+							"    const baseUrl = pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+							"    pm.sendRequest({",
+							"        url: baseUrl + '/api/v2/auth/login',",
+							"        method: 'POST',",
+							"        header: { 'Content-Type': 'application/json' },",
+							"        body: {",
+							"            mode: 'raw',",
+							"            raw: JSON.stringify({ email: 'user@example.com', password: 'password' })",
+							"        }",
+							"    }, function (err, res) {",
+							"        if (!err && res.code === 200) {",
+							"            const jsonData = res.json();",
+							"            if (jsonData && jsonData.token) {",
+							"                pm.collectionVariables.set('token', jsonData.token);",
+							"                console.log('✅ User token auto-set');",
+							"            }",
+							"        } else {",
+							"            console.error('❌ Auto-authentication failed:', err || res.text());",
+							"        }",
+							"    });",
+							"}"
+						]
+					}
+				}
+			],
 			"item": [
 				{
 					"name": "Create Rating for Movie",
@@ -870,7 +1139,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"score\": 8.5,\n  \"target\": \"movie\",\n  \"targetId\": \"id0164\",\n  \"review\": \"Great movie!\"\n}",
+							"raw": "{\n  \"score\": 8.5,\n  \"target\": \"movie\",\n  \"targetId\": \"id0166\",\n  \"review\": \"Great movie!\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -947,9 +1216,9 @@
 					"request": {
 						"method": "GET",
 						"url": {
-							"raw": "{{baseUrl}}/api/v2/ratings/avg/movie/id0164",
+							"raw": "{{baseUrl}}/api/v2/ratings/avg/movie/id0166",
 							"host": ["{{baseUrl}}"],
-							"path": ["api", "v2", "ratings", "avg", "movie", "id0164"]
+							"path": ["api", "v2", "ratings", "avg", "movie", "id0166"]
 						}
 					},
 					"response": []
@@ -1027,6 +1296,69 @@
 		},
 		{
 			"name": "7. Error Handling & Security Tests",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// Auto-authenticate based on request needs",
+							"const authHeader = pm.request.headers.get('Authorization');",
+							"const baseUrl = pm.collectionVariables.get('baseUrl') || 'http://localhost:3000';",
+							"",
+							"// Check if admin token is needed and missing",
+							"if (authHeader && authHeader.includes('{{adminToken}}')) {",
+							"    const adminToken = pm.collectionVariables.get('adminToken');",
+							"    if (!adminToken) {",
+							"        console.log('🔐 Auto-authenticating as admin...');",
+							"        pm.sendRequest({",
+							"            url: baseUrl + '/api/v2/auth/login',",
+							"            method: 'POST',",
+							"            header: { 'Content-Type': 'application/json' },",
+							"            body: {",
+							"                mode: 'raw',",
+							"                raw: JSON.stringify({ email: 'admin@example.com', password: 'password' })",
+							"            }",
+							"        }, function (err, res) {",
+							"            if (!err && res.code === 200) {",
+							"                const jsonData = res.json();",
+							"                if (jsonData && jsonData.token) {",
+							"                    pm.collectionVariables.set('adminToken', jsonData.token);",
+							"                    console.log('✅ Admin token auto-set');",
+							"                }",
+							"            }",
+							"        });",
+							"    }",
+							"}",
+							"",
+							"// Check if user token is needed and missing",
+							"if (authHeader && authHeader.includes('{{token}}')) {",
+							"    const userToken = pm.collectionVariables.get('token');",
+							"    if (!userToken) {",
+							"        console.log('🔐 Auto-authenticating as user...');",
+							"        pm.sendRequest({",
+							"            url: baseUrl + '/api/v2/auth/login',",
+							"            method: 'POST',",
+							"            header: { 'Content-Type': 'application/json' },",
+							"            body: {",
+							"                mode: 'raw',",
+							"                raw: JSON.stringify({ email: 'user@example.com', password: 'password' })",
+							"            }",
+							"        }, function (err, res) {",
+							"            if (!err && res.code === 200) {",
+							"                const jsonData = res.json();",
+							"                if (jsonData && jsonData.token) {",
+							"                    pm.collectionVariables.set('token', jsonData.token);",
+							"                    console.log('✅ User token auto-set');",
+							"                }",
+							"            }",
+							"        });",
+							"    }",
+							"}"
+						]
+					}
+				}
+			],
 			"item": [
 				{
 					"name": "Login Invalid Credentials",
@@ -1133,7 +1465,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"score\": 7.5,\n  \"target\": \"movie\",\n  \"targetId\": \"id0164\",\n  \"review\": \"Unauthorized rating\"\n}",
+							"raw": "{\n  \"score\": 7.5,\n  \"target\": \"movie\",\n  \"targetId\": \"id0166\",\n  \"review\": \"Unauthorized rating\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
