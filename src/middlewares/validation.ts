@@ -45,7 +45,7 @@ export const validateUserLogin: ValidationChain[] = [
         .withMessage('Password is required')
 ];
 
-// Movie validation
+// Movie validation (for POST - required fields)
 export const validateMovie: ValidationChain[] = [
     body('title')
         .isLength({ min: 1, max: 200 })
@@ -57,6 +57,34 @@ export const validateMovie: ValidationChain[] = [
         .isLength({ min: 1, max: 30 })
         .withMessage('Each genre must be between 1 and 30 characters'),
     body('durationMin')
+        .isInt({ min: 1, max: 600 })
+        .withMessage('Duration must be between 1 and 600 minutes'),
+    body('synopsis')
+        .optional()
+        .isLength({ max: 2000 })
+        .withMessage('Synopsis must be less than 2000 characters'),
+    body('releaseDate')
+        .optional()
+        .isISO8601()
+        .withMessage('Release date must be a valid date')
+];
+
+// Movie update validation (for PATCH - all fields optional)
+export const validateMovieUpdate: ValidationChain[] = [
+    body('title')
+        .optional()
+        .isLength({ min: 1, max: 200 })
+        .withMessage('Title must be between 1 and 200 characters'),
+    body('genres')
+        .optional()
+        .isArray({ min: 1 })
+        .withMessage('At least one genre is required'),
+    body('genres.*')
+        .optional()
+        .isLength({ min: 1, max: 30 })
+        .withMessage('Each genre must be between 1 and 30 characters'),
+    body('durationMin')
+        .optional()
         .isInt({ min: 1, max: 600 })
         .withMessage('Duration must be between 1 and 600 minutes'),
     body('synopsis')
@@ -115,8 +143,10 @@ export const validateRating: ValidationChain[] = [
         .isIn(['movie', 'episode'])
         .withMessage('Target must be either movie or episode'),
     body('targetId')
-        .isMongoId()
-        .withMessage('Target ID must be a valid MongoDB ObjectId'),
+        .notEmpty()
+        .withMessage('Target ID is required')
+        .isString()
+        .withMessage('Target ID must be a string'),
     body('score')
         .isFloat({ min: 0, max: 10 })
         .withMessage('Score must be between 0 and 10'),

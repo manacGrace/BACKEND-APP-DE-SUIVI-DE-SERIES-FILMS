@@ -9,6 +9,12 @@ lerna-debug.log*
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# mongodb
+src/data/v2/mongodb/**
+
+# Postman test run results (generated files)
+**/*postman*test*run*.json
+
 # Runtime data
 pids
 *.pid
