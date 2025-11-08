@@ -23,25 +23,40 @@ Authorization: Bearer <token>
 ### 1. Media Routes
 
 #### GET `/api/v1/medias`
-**Description**: Récupérer tous les médias avec filtres optionnels
+**Description**: Récupérer tous les médias avec filtres optionnels et pagination
 
 **Requêtes de test**:
 ```json
 // Test 1: Récupérer tous les médias
-GET /api/v1/medias
+GET http://localhost:3000/api/v1/medias
 
 // Test 2: Filtrer par type
-GET /api/v1/medias?type=Film
-GET /api/v1/medias?type=Serie
+GET http://localhost:3000/api/v1/medias?type=Film
+GET http://localhost:3000/api/v1/medias?type=Serie
 
 // Test 3: Filtrer par genre
-GET /api/v1/medias?genre=Action
+GET http://localhost:3000/api/v1/medias?genre=Action
 
 // Test 4: Filtrer par année
-GET /api/v1/medias?year=2020
+GET http://localhost:3000/api/v1/medias?year=2020
 
 // Test 5: Filtres combinés
-GET /api/v1/medias?type=Film&genre=Action&year=2020
+GET http://localhost:3000/api/v1/medias?type=Film&genre=Action&year=2020
+
+// Test 6: Pagination - page 1 (par défaut)
+GET http://localhost:3000/api/v1/medias?page=1&limit=20
+
+// Test 7: Pagination - page 2
+GET http://localhost:3000/api/v1/medias?page=2&limit=20
+
+// Test 8: Pagination avec filtres
+GET http://localhost:3000/api/v1/medias?type=Film&genre=Action&page=1&limit=10
+
+// Test 9: Limite personnalisée
+GET http://localhost:3000/api/v1/medias?limit=50
+
+// Test 10: Pagination avec tous les filtres
+GET http://localhost:3000/api/v1/medias?type=Film&genre=Action&year=2020&page=2&limit=15
 ```
 
 #### GET `/api/v1/medias/:id`
@@ -50,10 +65,10 @@ GET /api/v1/medias?type=Film&genre=Action&year=2020
 **Requêtes de test**:
 ```json
 // Test 1: ID valide
-GET /api/v1/medias/5001
+GET http://localhost:3000/api/v1/medias/5001
 
 // Test 2: ID inexistant
-GET /api/v1/medias/9999
+GET http://localhost:3000/api/v1/medias/9999
 ```
 
 #### POST `/api/v1/medias`
@@ -211,10 +226,10 @@ DELETE /api/v1/medias/9999
 **Requêtes de test**:
 ```json
 // Test 1: ID valide
-GET /api/v1/series/5002/episodes
+GET http://localhost:3000/api/v1/series/5002/episodes
 
 // Test 2: ID inexistant
-GET /api/v1/series/9999/episodes
+GET http://localhost:3000/api/v1/series/9999/episodes
 ```
 
 ---
@@ -317,13 +332,13 @@ GET /api/v1/series/9999/episodes
 **Requêtes de test**:
 ```json
 // Test 1: Utilisateur avec favoris
-GET /api/v1/users/1/medias
+GET http://localhost:3000/api/v1/users/1/medias
 
 // Test 2: Utilisateur sans favoris
-GET /api/v1/users/2/medias
+GET http://localhost:3000/api/v1/users/2/medias
 
 // Test 3: Utilisateur inexistant
-GET /api/v1/users/9999/medias
+GET http://localhost:3000/api/v1/users/9999/medias
 ```
 
 ---
@@ -336,11 +351,11 @@ GET /api/v1/users/9999/medias
 **Requêtes de test**:
 ```json
 // Test 1: Récupérer les logs
-GET /api/v1/logs
+GET http://localhost:3000/api/v1/logs
 
 // Réponse attendue:
 {
-  "lastAction": "GET /api/v1/medias",
+  "lastAction": "GET http://localhost:3000/api/v1/medias",
   "timestamp": "2023-09-01T10:00:00.000Z"
 }
 ```
@@ -443,14 +458,14 @@ Authorization: Bearer <token>
 **Requêtes de test**:
 ```json
 // Test 1: Token valide
-GET /api/v2/users/me
+GET http://localhost:3000/api/v2/users/me
 Headers: { "Authorization": "Bearer <token>" }
 
 // Test 2: Token manquant
-GET /api/v2/users/me
+GET http://localhost:3000/api/v2/users/me
 
 // Test 3: Token invalide
-GET /api/v2/users/me
+GET http://localhost:3000/api/v2/users/me
 Headers: { "Authorization": "Bearer invalid_token" }
 ```
 
@@ -492,15 +507,15 @@ Headers: { "Authorization": "Bearer invalid_token" }
 **Requêtes de test**:
 ```json
 // Test 1: ID valide avec token admin
-GET /api/v2/users/id0001
+GET http://localhost:3000/api/v2/users/id0001
 Headers: { "Authorization": "Bearer <admin_token>" }
 
 // Test 2: Accès non-admin (devrait retourner 403)
-GET /api/v2/users/id0001
+GET http://localhost:3000/api/v2/users/id0001
 Headers: { "Authorization": "Bearer <user_token>" }
 
 // Test 3: ID inexistant
-GET /api/v2/users/id9999
+GET http://localhost:3000/api/v2/users/id9999
 Headers: { "Authorization": "Bearer <admin_token>" }
 ```
 
@@ -552,31 +567,31 @@ Headers: { "Authorization": "Bearer <admin_token>" }
 **Requêtes de test**:
 ```json
 // Test 1: Récupérer tous les films (première page)
-GET /api/v2/movies
+GET http://localhost:3000/api/v2/movies
 
 // Test 2: Pagination - page 2
-GET /api/v2/movies?page=2&limit=20
+GET http://localhost:3000/api/v2/movies?page=2&limit=20
 
 // Test 3: Filtrer par titre
-GET /api/v2/movies?title=Avengers
+GET http://localhost:3000/api/v2/movies?title=Avengers
 
 // Test 4: Filtrer par genre
-GET /api/v2/movies?genre=Action
+GET http://localhost:3000/api/v2/movies?genre=Action
 
 // Test 5: Filtrer par année (plage)
-GET /api/v2/movies?minYear=2020&maxYear=2024
+GET http://localhost:3000/api/v2/movies?minYear=2020&maxYear=2024
 
 // Test 6: Filtrer par durée (plage)
-GET /api/v2/movies?minDuration=90&maxDuration=150
+GET http://localhost:3000/api/v2/movies?minDuration=90&maxDuration=150
 
 // Test 7: Filtres combinés
-GET /api/v2/movies?genre=Action&minYear=2010&maxYear=2020&minDuration=120&page=1&limit=10
+GET http://localhost:3000/api/v2/movies?genre=Action&minYear=2010&maxYear=2020&minDuration=120&page=1&limit=10
 
 // Test 8: Limite maximale (200)
-GET /api/v2/movies?limit=200
+GET http://localhost:3000/api/v2/movies?limit=200
 
 // Test 9: Limite dépassée (devrait être limité à 200)
-GET /api/v2/movies?limit=300
+GET http://localhost:3000/api/v2/movies?limit=300
 ```
 
 #### POST `/api/v2/movies` (Admin seulement)
@@ -658,10 +673,10 @@ GET /api/v2/movies?limit=300
 **Requêtes de test**:
 ```json
 // Test 1: ID valide
-GET /api/v2/movies/mov001
+GET http://localhost:3000/api/v2/movies/mov001
 
 // Test 2: ID inexistant
-GET /api/v2/movies/mov999
+GET http://localhost:3000/api/v2/movies/mov999
 ```
 
 #### PATCH `/api/v2/movies/:id` (Admin seulement)
@@ -717,20 +732,20 @@ Headers: { "Authorization": "Bearer <admin_token>" }
 **Requêtes de test**:
 ```json
 // Test 1: Récupérer toutes les séries
-GET /api/v2/series
+GET http://localhost:3000/api/v2/series
 
 // Test 2: Filtrer par titre
-GET /api/v2/series?title=Breaking
+GET http://localhost:3000/api/v2/series?title=Breaking
 
 // Test 3: Filtrer par genre
-GET /api/v2/series?genre=Drama
+GET http://localhost:3000/api/v2/series?genre=Drama
 
 // Test 4: Filtrer par statut
-GET /api/v2/series?status=ended
-GET /api/v2/series?status=ongoing
+GET http://localhost:3000/api/v2/series?status=ended
+GET http://localhost:3000/api/v2/series?status=ongoing
 
 // Test 5: Filtres combinés avec pagination
-GET /api/v2/series?genre=Crime&status=ended&page=1&limit=10
+GET http://localhost:3000/api/v2/series?genre=Crime&status=ended&page=1&limit=10
 ```
 
 #### POST `/api/v2/series` (Admin seulement)
@@ -792,10 +807,10 @@ GET /api/v2/series?genre=Crime&status=ended&page=1&limit=10
 **Requêtes de test**:
 ```json
 // Test 1: ID valide
-GET /api/v2/series/ser001
+GET http://localhost:3000/api/v2/series/ser001
 
 // Test 2: ID inexistant
-GET /api/v2/series/ser999
+GET http://localhost:3000/api/v2/series/ser999
 ```
 
 #### PATCH `/api/v2/series/:id` (Admin seulement)
@@ -845,13 +860,13 @@ Headers: { "Authorization": "Bearer <admin_token>" }
 **Requêtes de test**:
 ```json
 // Test 1: Récupérer toutes les saisons
-GET /api/v2/series/ser001/seasons
+GET http://localhost:3000/api/v2/series/ser001/seasons
 
 // Test 2: Avec pagination
-GET /api/v2/series/ser001/seasons?page=1&limit=10
+GET http://localhost:3000/api/v2/series/ser001/seasons?page=1&limit=10
 
 // Test 3: Série inexistante
-GET /api/v2/series/ser999/seasons
+GET http://localhost:3000/api/v2/series/ser999/seasons
 ```
 
 #### POST `/api/v2/series/:seriesId/seasons` (Admin seulement)
@@ -912,22 +927,22 @@ GET /api/v2/series/ser999/seasons
 **Requêtes de test**:
 ```json
 // Test 1: Récupérer tous les épisodes
-GET /api/v2/series/ser001/seasons/sea001/episodes
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea001/episodes
 
 // Test 2: Avec pagination
-GET /api/v2/series/ser001/seasons/sea001/episodes?page=1&limit=10
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea001/episodes?page=1&limit=10
 
 // Test 3: Filtrer par durée minimale
-GET /api/v2/series/ser001/seasons/sea001/episodes?minDuration=40
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea001/episodes?minDuration=40
 
 // Test 4: Filtrer par durée maximale
-GET /api/v2/series/ser001/seasons/sea001/episodes?maxDuration=60
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea001/episodes?maxDuration=60
 
 // Test 5: Plage de durée
-GET /api/v2/series/ser001/seasons/sea001/episodes?minDuration=45&maxDuration=55
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea001/episodes?minDuration=45&maxDuration=55
 
 // Test 6: Saison inexistante
-GET /api/v2/series/ser001/seasons/sea999/episodes
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea999/episodes
 ```
 
 #### POST `/api/v2/series/:seriesId/seasons/:seasonId/episodes` (Admin seulement)
@@ -997,10 +1012,10 @@ GET /api/v2/series/ser001/seasons/sea999/episodes
 **Requêtes de test**:
 ```json
 // Test 1: ID valide
-GET /api/v2/series/ser001/seasons/sea001/episodes/ep001
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea001/episodes/ep001
 
 // Test 2: ID inexistant
-GET /api/v2/series/ser001/seasons/sea001/episodes/ep999
+GET http://localhost:3000/api/v2/series/ser001/seasons/sea001/episodes/ep999
 ```
 
 ---
@@ -1013,32 +1028,32 @@ GET /api/v2/series/ser001/seasons/sea001/episodes/ep999
 **Requêtes de test**:
 ```json
 // Test 1: Récupérer toutes les notes
-GET /api/v2/ratings
+GET http://localhost:3000/api/v2/ratings
 
 // Test 2: Filtrer par type de cible
-GET /api/v2/ratings?target=movie
-GET /api/v2/ratings?target=episode
+GET http://localhost:3000/api/v2/ratings?target=movie
+GET http://localhost:3000/api/v2/ratings?target=episode
 
 // Test 3: Filtrer par ID de cible
-GET /api/v2/ratings?targetId=mov001
+GET http://localhost:3000/api/v2/ratings?targetId=mov001
 
 // Test 4: Filtrer par utilisateur
-GET /api/v2/ratings?userId=id0001
+GET http://localhost:3000/api/v2/ratings?userId=id0001
 
 // Test 5: Filtrer par score minimum
-GET /api/v2/ratings?minScore=7.0
+GET http://localhost:3000/api/v2/ratings?minScore=7.0
 
 // Test 6: Filtrer par score maximum
-GET /api/v2/ratings?maxScore=9.0
+GET http://localhost:3000/api/v2/ratings?maxScore=9.0
 
 // Test 7: Plage de scores
-GET /api/v2/ratings?minScore=7.5&maxScore=8.5
+GET http://localhost:3000/api/v2/ratings?minScore=7.5&maxScore=8.5
 
 // Test 8: Filtres combinés
-GET /api/v2/ratings?target=movie&targetId=mov001&minScore=8.0&page=1&limit=10
+GET http://localhost:3000/api/v2/ratings?target=movie&targetId=mov001&minScore=8.0&page=1&limit=10
 
 // Test 9: Avec pagination
-GET /api/v2/ratings?page=2&limit=20
+GET http://localhost:3000/api/v2/ratings?page=2&limit=20
 ```
 
 #### POST `/api/v2/ratings` (JWT requis)
@@ -1128,10 +1143,10 @@ GET /api/v2/ratings?page=2&limit=20
 **Requêtes de test**:
 ```json
 // Test 1: ID valide
-GET /api/v2/ratings/rat001
+GET http://localhost:3000/api/v2/ratings/rat001
 
 // Test 2: ID inexistant
-GET /api/v2/ratings/rat999
+GET http://localhost:3000/api/v2/ratings/rat999
 ```
 
 #### PATCH `/api/v2/ratings/:id` (JWT requis - propriétaire seulement)
@@ -1184,13 +1199,13 @@ Headers: { "Authorization": "Bearer <token>" }
 **Requêtes de test**:
 ```json
 // Test 1: Film avec plusieurs notes
-GET /api/v2/ratings/avg/movie/mov001
+GET http://localhost:3000/api/v2/ratings/avg/movie/mov001
 
 // Test 2: Film sans notes
-GET /api/v2/ratings/avg/movie/mov999
+GET http://localhost:3000/api/v2/ratings/avg/movie/mov999
 
 // Test 3: Film inexistant
-GET /api/v2/ratings/avg/movie/inexistent
+GET http://localhost:3000/api/v2/ratings/avg/movie/inexistent
 ```
 
 #### GET `/api/v2/ratings/avg/series/:seriesId`
@@ -1199,13 +1214,13 @@ GET /api/v2/ratings/avg/movie/inexistent
 **Requêtes de test**:
 ```json
 // Test 1: Série avec plusieurs notes d'épisodes
-GET /api/v2/ratings/avg/series/ser001
+GET http://localhost:3000/api/v2/ratings/avg/series/ser001
 
 // Test 2: Série sans notes
-GET /api/v2/ratings/avg/series/ser999
+GET http://localhost:3000/api/v2/ratings/avg/series/ser999
 
 // Test 3: Série inexistante
-GET /api/v2/ratings/avg/series/inexistent
+GET http://localhost:3000/api/v2/ratings/avg/series/inexistent
 ```
 
 ---
@@ -1236,7 +1251,7 @@ Headers: { "Authorization": "Bearer <admin_token>" }
 }
 
 // 3. Consulter le film créé
-GET /api/v2/movies/mov_test001
+GET http://localhost:3000/api/v2/movies/mov_test001
 
 // 4. Noter le film
 POST /api/v2/ratings
@@ -1249,7 +1264,7 @@ Headers: { "Authorization": "Bearer <user_token>" }
 }
 
 // 5. Consulter la moyenne des notes
-GET /api/v2/ratings/avg/movie/mov_test001
+GET http://localhost:3000/api/v2/ratings/avg/movie/mov_test001
 ```
 
 ### Scénario 2: Workflow Complet - Création d'une Série avec Saisons et Épisodes
@@ -1284,7 +1299,7 @@ Headers: { "Authorization": "Bearer <admin_token>" }
 }
 
 // 4. Consulter tous les épisodes de la saison
-GET /api/v2/series/ser_test001/seasons/sea_test001/episodes
+GET http://localhost:3000/api/v2/series/ser_test001/seasons/sea_test001/episodes
 
 // 5. Noter l'épisode
 POST /api/v2/ratings
@@ -1297,7 +1312,7 @@ Headers: { "Authorization": "Bearer <user_token>" }
 }
 
 // 6. Consulter la moyenne des notes de la série
-GET /api/v2/ratings/avg/series/ser_test001
+GET http://localhost:3000/api/v2/ratings/avg/series/ser_test001
 ```
 
 ### Scénario 3: Gestion des Favoris Utilisateur
@@ -1311,7 +1326,7 @@ POST /api/v2/auth/login
 → Sauvegarder le token
 
 // 2. Consulter son profil
-GET /api/v2/users/me
+GET http://localhost:3000/api/v2/users/me
 Headers: { "Authorization": "Bearer <token>" }
 
 // 3. Ajouter des films aux favoris
@@ -1322,7 +1337,7 @@ Headers: { "Authorization": "Bearer <token>" }
 }
 
 // 4. Vérifier les favoris mis à jour
-GET /api/v2/users/me
+GET http://localhost:3000/api/v2/users/me
 Headers: { "Authorization": "Bearer <token>" }
 ```
 
